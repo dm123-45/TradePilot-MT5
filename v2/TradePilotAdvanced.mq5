@@ -242,3 +242,23 @@ void OnTimer()
          explanation,"\n",
          "Trade journal: MQL5/Files/TradePilotV2_Decisions.csv");
 }
+
+void OnTradeTransaction(const MqlTradeTransaction &transaction,
+                        const MqlTradeRequest &request,
+                        const MqlTradeResult &result)
+{
+ if(transaction.type!=TRADE_TRANSACTION_DEAL_ADD || transaction.deal==0)return;
+ if(!HistoryDealSelect(transaction.deal))return;
+ if(HistoryDealGetInteger(transaction.deal,DEAL_MAGIC)!=ExpertMagic)return;
+ string symbol=HistoryDealGetString(transaction.deal,DEAL_SYMBOL);
+ long entry=HistoryDealGetInteger(transaction.deal,DEAL_ENTRY);
+ double pnl=HistoryDealGetDouble(transaction.deal,DEAL_PROFIT)+
+            HistoryDealGetDouble(transaction.deal,DEAL_COMMISSION)+
+            HistoryDealGetDouble(transaction.deal,DEAL_SWAP);
+ string detail="Deal #"+IntegerToString((long)transaction.deal)+
+               " entry_code="+IntegerToString(entry)+
+               " realized_PnL="+DoubleToString(pnl,2);
+ Record(symbol,"DEAL",entry==DEAL_ENTRY_OUT?"CLOSED":"FILLED",
+        detail,HistoryDealGetDouble(transaction.deal,DEAL_PRICE),0,0,
+        HistoryDealGetDouble(transaction.deal,DEAL_VOLUME));
+}
